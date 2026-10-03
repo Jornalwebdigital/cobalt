@@ -22,6 +22,7 @@ ARG RENDER_GIT_COMMIT
 
 RUN mkdir -p /prod/api/.git/logs \
     && printf "ref: refs/heads/main\n" > /prod/api/.git/HEAD \
+    && printf "[remote \"origin\"]\n\turl = https://github.com/Jornalwebdigital/cobalt.git\n\tfetch = +refs/heads/*:refs/remotes/origin/*\n" > /prod/api/.git/config \
     && printf "0000000000000000000000000000000000000000 %s Render <render@render.com> %s +0000\n" \
        "${RENDER_GIT_COMMIT:-0000000000000000000000000000000000000000}" \
        "$(date +%s)" \
