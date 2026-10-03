@@ -1,4 +1,3 @@
-```dockerfile
 FROM node:24-alpine AS base
 
 ENV PNPM_HOME="/pnpm"
@@ -19,12 +18,8 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 
 RUN pnpm deploy --filter=@imput/cobalt-api --prod /prod/api
 
-# Render provides the Git commit used for this deployment.
 ARG RENDER_GIT_COMMIT
 
-# Cobalt's version-info package expects a Git repository.
-# Create the minimum Git metadata it needs instead of copying
-# the entire .git directory into the production image.
 RUN mkdir -p /prod/api/.git/logs \
     && printf "ref: refs/heads/main\n" > /prod/api/.git/HEAD \
     && printf "0000000000000000000000000000000000000000 %s Render <render@render.com> %s +0000\n" \
@@ -43,4 +38,3 @@ USER node
 EXPOSE 9000
 
 CMD ["node", "src/cobalt"]
-```
