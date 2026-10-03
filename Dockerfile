@@ -1,26 +1,46 @@
+```dockerfile
 FROM node:24-alpine AS base
+
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 
 FROM base AS build
+
 WORKDIR /app
+
 COPY . /app
 
 RUN corepack enable
-RUN apk add --no-cache python3 alpine-sdk
+
+RUN apk add --no-cache python3 alpine-sdk git
 
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --prod --frozen-lockfile
 
 RUN pnpm deploy --filter=@imput/cobalt-api --prod /prod/api
 
+# Render provides the Git commit used for this deployment.
+ARG RENDER_GIT_COMMIT
+
+# Cobalt's version-info package expects a Git repository.
+# Create the minimum Git metadata it needs instead of copying
+# the entire .git directory into the production image.
+RUN mkdir -p /prod/api/.git/logs \
+    && printf "ref: refs/heads/main\n" > /prod/api/.git/HEAD \
+    && printf "0000000000000000000000000000000000000000 %s Render <render@render.com> %s +0000\n" \
+       "${RENDER_GIT_COMMIT:-0000000000000000000000000000000000000000}" \
+       "$(date +%s)" \
+       > /prod/api/.git/logs/HEAD
+
 FROM base AS api
+
 WORKDIR /app
 
 COPY --from=build --chown=node:node /prod/api /app
-COPY --from=build --chown=node:node /app/.git /app/.git
 
 USER node
 
 EXPOSE 9000
-CMD [ "node", "src/cobalt" ]
+
+CMD ["node", "src/cobalt"]
+```
